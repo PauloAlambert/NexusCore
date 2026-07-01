@@ -306,13 +306,7 @@ function Core:SendGeminiPrompt(promptHistory, onUpdate, cancelTable)
 NUNCA use: 'TextPadding', 'Handled', 'Target'.
 Sempre feche todos os blocos 'end'.
 Se o usuario falar de um jogo especifico, procure afundo sobre como esse jogo funciona.
-Retorne APENAS o código puro dentro de blocos lua.
-
-INSTRUÇÃO SOBRE SEUS PODERES IN-GAME:
-Você está rodando dentro do "NEXUS" e possui suporte a "Function Calling". Você pode (e deve) visualizar o jogo do usuário!
-- Use a ferramenta `get_children` para listar pastas e objetos (ex: game.Workspace, game.ReplicatedStorage).
-- Use a ferramenta `get_script_source` para ler o código-fonte de LocalScripts ou ModuleScripts e entender a lógica do jogo.
-Seja investigativo: Se você não souber a estrutura do mapa ou como uma mecânica funciona, chame essas ferramentas ANTES de gerar a resposta.]]
+Retorne APENAS o código puro dentro de blocos lua.]]
     
     local payload = { 
         systemInstruction = { parts = {{ text = systemPrompt }} },
