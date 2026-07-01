@@ -48,9 +48,9 @@ function Core:LoadVault(vaultId)
     return data or {}
 end
 
-function Core:SaveToVault(name, content)
-    if self.Config.VaultID == "" then return false end
-    local url = self.Config.FirebaseURL .. "cofres/" .. self.Config.VaultID .. "/scripts.json"
+function Core:SaveToVault(vaultId, name, content)
+    if not vaultId or vaultId == "" then return false end
+    local url = self.Config.FirebaseURL .. "cofres/" .. vaultId .. "/scripts.json"
     local success = pcall(function()
         httpRequest({
             Url = url, 
@@ -227,13 +227,6 @@ function Core:StartInboxListener()
                         elseif cmd.type == "SERVER_BRING" then 
                             pcall(function() StarterGui:SetCore("SendNotification", {Title = "NEXUS", Text = "Indo p/ server de " .. cmd.sender}) end)
                             TeleportService:TeleportToPlaceInstance(cmd.placeId, cmd.jobId, LocalPlayer)
-                        elseif cmd.type == "GOJO_KILL" then
-                            local char = LocalPlayer.Character
-                            if char and char:FindFirstChild("Humanoid") then
-                                char.Humanoid.Health = 0
-                                local p = Instance.new("ParticleEmitter", char:FindFirstChild("HumanoidRootPart"))
-                                p.Color=ColorSequence.new(Color3.fromRGB(130,0,0)); p:Emit(100)
-                            end
                         end
                     end)
                     self:RequestDB("usuarios/" .. tostring(LocalPlayer.UserId) .. "/inbox/" .. key, "DELETE")
