@@ -313,7 +313,7 @@ Retorne APENAS o código puro dentro de blocos lua.]]
         contents = promptHistory, 
         generationConfig = { temperature = 0.5 } 
     }
-    if self.Config.AgenticEnabled then payload.tools = {{ functionDeclarations = AgentTools }} end
+    -- if self.Config.AgenticEnabled then payload.tools = {{ functionDeclarations = AgentTools }} end
 
     local maxTurns = 5
     local currentTurn = 1
