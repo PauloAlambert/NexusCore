@@ -248,6 +248,7 @@ function Core:NextApiKey()
     if #self.Config.ApiKeys <= 1 then return end
     self.Config.CurrentKeyIndex = self.Config.CurrentKeyIndex + 1
     if self.Config.CurrentKeyIndex > #self.Config.ApiKeys then self.Config.CurrentKeyIndex = 1 end
+    return self.Config.CurrentKeyIndex
 end
 
 local AgentTools = {
@@ -295,7 +296,7 @@ function Core:ExecuteTool(toolName, args)
     return "Tool not found."
 end
 
-function Core:SendGeminiPrompt(promptHistory, onUpdate)
+function Core:SendGeminiPrompt(promptHistory, onUpdate, cancelTable)
     local apiKey = self:GetCurrentApiKey()
     if not apiKey then onUpdate("ERRO: Nenhuma API Key configurada.", true) return nil end
     local model = self.Config.CurrentModel
@@ -312,21 +313,35 @@ function Core:SendGeminiPrompt(promptHistory, onUpdate)
 
     local maxTurns = 5
     local currentTurn = 1
+    local keysAttempted = 0 -- Controle para evitar loop infinito de chaves
+    local totalKeys = #self.Config.ApiKeys
 
     while currentTurn <= maxTurns do
+        if cancelTable and cancelTable.cancelled then
+            onUpdate("🚫 Requisição cancelada pelo usuário.", true)
+            return nil
+        end
+
         local reqData = { Url = url, Method = "POST", Headers = { ["Content-Type"] = "application/json" }, Body = HttpService:JSONEncode(payload) }
-        onUpdate("⏳ Requisitando Gemini API (Turno " .. currentTurn .. ")...", false)
+        onUpdate("⏳ Requisitando Gemini API (Chave " .. self.Config.CurrentKeyIndex .. "/" .. totalKeys .. " | Turno " .. currentTurn .. ")...", false)
         local success, res = pcall(function() return httpRequest(reqData) end)
 
         if not success or not res then onUpdate("ERRO: Falha ao enviar requisição HTTP.", true) return nil end
 
         if res.StatusCode == 429 or res.StatusCode == 403 then
-            self:NextApiKey()
-            onUpdate("⚠️ API Key esgotada. Mudando para a próxima chave...", false)
+            keysAttempted = keysAttempted + 1
+            if keysAttempted >= totalKeys then
+                onUpdate("❌ ERRO CRÍTICO: Todas as " .. totalKeys .. " chaves configuradas falharam (Rate Limit/Forbidden). Requisição abortada.", true)
+                return nil
+            end
+            
+            local newIndex = self:NextApiKey()
+            onUpdate("⚠️ Chave " .. (newIndex == 1 and totalKeys or (newIndex - 1)) .. " esgotada. Mudando para a Chave " .. newIndex .. "...", false)
             url = "https://generativelanguage.googleapis.com/v1beta/models/" .. model .. ":generateContent?key=" .. self:GetCurrentApiKey()
             task.wait(1)
             continue
         end
+        keysAttempted = 0 -- Reseta a contagem de falhas seguidas se deu sucesso
         if res.StatusCode ~= 200 then 
             if res.StatusCode == 404 then
                 onUpdate("ERRO 404: O modelo '" .. model .. "' não foi encontrado na API. Escolha um modelo mais antigo (ex: gemini-1.5-pro) na aba Configurações.", true)
